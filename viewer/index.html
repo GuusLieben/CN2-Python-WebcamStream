@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+
+<head>
+  <style>
+    #url {
+      width: 350px;
+    }
+
+    #log {
+      width: 640px;
+      height: 200px;
+      margin-top: 10px;
+      border-left: 0px;
+      border-right: 0px;
+      padding-left: 0px;
+      padding-right: 0px;
+      display: block;
+      background-color: black;
+      color: white;
+      font-size: medium;
+      font-family: 'Lucida Console', Monaco, monospace;
+      outline: none;
+    }
+  </style>
+</head>
+<script src="NodePlayer.js"></script>
+<script>
+  window.onload = function () {
+    var url = document.getElementById("url");
+    var button = document.getElementById("play");
+    var logview = document.getElementById("log");
+    var audioCB = document.getElementById("audioCB");
+    var videoCB = document.getElementById("videoCB");
+    Module.print = (text) => {
+      logview.innerHTML = logview.innerHTML + text + "\n";
+
+    };
+
+    Module.printErr = (text) => {
+      logview.innerHTML = logview.innerHTML + text + "\n";
+    };
+
+    var np = new Module.NodePlayer();
+    var isStarting = false;
+    np.on('start', () => {
+      Module.print('NodePlayer on start');
+    });
+    np.on('close', () => {
+      Module.print('NodePlayer on close');
+    });
+    np.on('error', (err) => {
+      Module.print('NodePlayer on error',err);
+    });
+    np.setPlayView('video');
+    np.setScaleMode(1);
+    np.enableVideo(videoCB.checked);
+    np.enableAudio(audioCB.checked);
+    var playback = function (event) {
+      if (isStarting) {
+        np.stop();
+        button.value = "start";
+        isStarting = false;
+      } else {
+        np.start(url.value);
+        button.value = "stop";
+        isStarting = true;
+      }
+    }
+
+    var audioChange = function () {
+      np.enableAudio(audioCB.checked);
+    }
+
+    var videoChange = function () {
+      np.enableVideo(videoCB.checked);
+    }
+
+    if (button.addEventListener) {
+      button.addEventListener("click", playback, false);
+    } else if (button.attachEvent) {
+      button.attachEvent('onclick', playback);
+    }
+
+    if (videoCB.addEventListener) {
+      videoCB.addEventListener("click", videoChange, false);
+    } else if (button.attachEvent) {
+      videoCB.attachEvent('onclick', videoChange);
+    }
+
+    if (audioCB.addEventListener) {
+      audioCB.addEventListener("click", audioChange, false);
+    } else if (audioCB.attachEvent) {
+      audioCB.attachEvent('onclick', audioChange);
+    }
+
+
+  };
+
+</script>
+
+<body>
+  <h1>NodePlayer.js</h1>
+  <div>
+    <div>Simple Live Stream player in pure JavaScript.</div>
+    <canvas id="video" width=640 height=480></canvas>
+  </div>
+  <input id="url" value="ws://localhost:8000/live/darwin_live.flv" />
+  <input id="play" type="button" value="Play" />
+  <input type="checkbox" id="audioCB" value="enableAudio" />
+  <label for="enableAudio">enableAudio</label>
+  <input type="checkbox" id="videoCB" value="enableVideo" checked/>
+  <label for="enableVideo">enableVideo</label>
+  <br />
+  <textarea id="log" rows="8"></textarea>
+</body>
+
+</html>

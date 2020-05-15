@@ -1,67 +1,69 @@
-import socket
-import numpy as np
-import cv2 as opencv
+from __future__ import division
 
-addr = ("127.0.0.1", 65534)
-buf = 512
-width = 640
-height = 480
-code = 'start'
-code = ('start' + (buf - len(code)) * 'a').encode('utf-8')
-run = True
-frame = 0
-camera = opencv.VideoCapture(0, opencv.CAP_DSHOW)
-camera.set(3, width)
-camera.set(4, height)
+import subprocess as sp
 
+import cv2
+
+# Paused stream image
 path = r'C:\Users\Guus Lieben\Pictures\dab_stream.png'
-image = opencv.imread(path)
-font = opencv.FONT_HERSHEY_SIMPLEX
+image = cv2.imread(path)  # Use the predefined image as paused image
+font = cv2.FONT_HERSHEY_SIMPLEX
 org = (50, 50)
-fontScale = 1
-color = (255, 0, 0)
+fontScale = 0.75
+color = (0, 0, 255)
 thickness = 2
-image = opencv.putText(image, 'Stream paused', org, font,
-                       fontScale, color, thickness, opencv.LINE_AA)
+pause_img = cv2.putText(image, 'Stream paused', org, font,
+                        fontScale, color, thickness, cv2.LINE_AA)
+
+webcam_name = 'Logitech HD Webcam C525'
+
+# FFMPEG command
+ffmpeg = 'ffmpeg'
+source = 'video={}'.format(webcam_name)
+temp_folder = 'D:\CN2PyStream\\temp'
 
 
-def mouse_event(event, x, y, flags, param):
-    global run
-    if event == opencv.EVENT_LBUTTONDOWN:
-        run = not run
+def run_ffmpeg():
+    command = [
+        ffmpeg,
+        "-f", "dshow",
+        "-video_size", "640_360",
+        "-i", source,
+        "-pix_fmt", "yuv420p",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-tune", "zerolatency",
+        "-f", "flv",  # output format
+        "rtmp://localhost/live/stream_id",
+        "-y",
+        "-r", "1",
+        "-pix_fmt", "bgr24",
+        "-vcodec", "rawvideo",
+        "-an",
+        "-f", "yuv4mpegpipe",
+        temp_folder
+    ]
+    return sp.Popen(command, stdout=sp.PIPE, bufsize=10)
 
 
-if __name__ == '__main__':
-    window_name = 'Streamer'
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    opencv.namedWindow(window_name)
-    opencv.setMouseCallback(window_name, mouse_event)
-    lastvisual = []
-    while camera.isOpened():
-        visual = None
-        if run:
-            ret, frame = camera.read()
-            if ret:
-                opencv.imshow(window_name, frame)
-                visual = frame
-                lastvisual = visual
-                if opencv.waitKey(1) & 0xFF == ord('q'):
-                    break
-            else:
+def run_cv(ffmpeg_process):
+    cap = cv2.VideoCapture(temp_folder)
+
+    while True:
+        if cap.isOpened():
+            _, frame = cap.read()
+            cv2.imshow('Preview', frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-        else:
-            opencv.waitKey(1)
-            opencv.imshow(window_name, image)
-            visual = image
-            lastvisual = visual
 
-        match = lastvisual == visual
-        if match.all():
-            s.sendto(code, addr)
-            data = visual.tostring()
-            for i in range(0, len(data), buf):
-                s.sendto(data[i:i + buf], addr)
+    cv2.destroyAllWindows()
 
-    s.close()
-    camera.release()
-    opencv.destroyAllWindows()
+
+def run():
+    ffmpeg_process = run_ffmpeg()
+    run_cv(ffmpeg_process)
+
+
+if __name__ == "__main__":
+    run()
