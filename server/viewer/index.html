@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+
+<head>
+  <link href="http://getskeleton.com/dist/css/skeleton.css" rel="stylesheet"></link>
+  <style>
+    #url {
+      width: 350px
+    }
+
+    .center { text-align: center }
+  </style>
+</head>
+<script src="NodePlayer.js"></script>
+<script>
+  window.onload = function () {
+    var url = document.getElementById("url")
+    var button = document.getElementById("play")
+    var logview = document.getElementById("log")
+    var audioCB = document.getElementById("audioCB")
+    var videoCB = document.getElementById("videoCB")
+
+    var np = new Module.NodePlayer()
+    var isStarting = false
+    np.on('start', () => {
+      console.log('Started stream')
+    })
+    np.on('close', () => {
+      console.log('Stopped stream')
+    })
+    np.on('error', (err) => {
+      console.log(err)
+    })
+    np.setPlayView('video')
+    np.setScaleMode(1)
+    np.enableVideo(true)
+    np.enableAudio(false)
+    var playback = function (event) {
+      if (isStarting) {
+        np.stop()
+        button.value = "start"
+        isStarting = false
+      } else {
+        var streamUrl = `ws://localhost:8000/live/${url.value}.flv`
+        console.log(streamUrl)
+        np.start(streamUrl)
+        button.value = "stop"
+        isStarting = true
+      }
+    }
+
+    if (button.addEventListener) {
+      button.addEventListener("click", playback, false)
+    } else if (button.attachEvent) {
+      button.attachEvent('onclick', playback)
+    }
+
+
+  }
+
+</script>
+
+<body>
+  <div class="center">
+  <h1>CN2 Stream Viewer</h1>
+  <div>
+    <canvas id="video" width=640 height=480></canvas>
+  </div>
+  <i>Stream ID : </i><input id="url" class="u-full-width" value="" placeholder="Enter stream Id..." />
+
+  <input id="play" type="button" value="Play" />
+</div>
+</body>
+
+</html>

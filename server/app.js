@@ -1,5 +1,7 @@
 const NodeMediaServer = require('node-media-server');
- 
+const express = require('express');
+const app = express();
+
 const config = {
   rtmp: {
     port: 1935,
@@ -16,3 +18,6 @@ const config = {
  
 var nms = new NodeMediaServer(config)
 nms.run();
+
+app.use(express.static('viewer'))
+app.listen(8080, () => console.log('Started Viewer host!'))
