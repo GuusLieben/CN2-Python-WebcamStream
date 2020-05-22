@@ -18,7 +18,7 @@ webcam_name = 'Logitech HD Webcam C525'
 # FFMPEG command
 ffmpeg = 'ffmpeg'
 source = 'video={}'.format(webcam_name)
-stream_id = str(hash(sp))
+stream_id = str(hash(sp))[0:5]
 
 def run_ffmpeg():
     command = [
